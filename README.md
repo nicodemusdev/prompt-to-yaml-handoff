@@ -2,11 +2,6 @@
 
 Convert plain text prompts into structured agent handoffs with YAML frontmatter.
 
-## Credibility
-
-- **Gostlight:** [gostlight.ai](https://gostlight.ai) — multi-agent memory and handoff systems
-- **ClawHub:** [clawhub.io](https://clawhub.io) — skill downloads for AI agents
-
 ## Usage
 
 1. Open `index.html` in a browser (or deploy to any static host).
