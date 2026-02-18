@@ -46,6 +46,14 @@ python3 -m http.server 8080
    - `GROQ_API_KEY` — fallback when OpenRouter hits rate limits. [console.groq.com](https://console.groq.com)
 3. Primary: OpenRouter (200 req/day free). Fallback: Groq (faster, no rate limits).
 
+## LLM configuration
+
+**Default providers:** OpenRouter (Llama 3.3 70B free) primary, Groq (Llama 3.3 70B) fallback.
+
+**Why these two:** Both offer free tiers. OpenRouter gives ~200 req/day on the free model; Groq has no rate limits and is faster. Together they keep the hosted demo usable without paid keys.
+
+**Self-host or local:** Deploy to your own Vercel project or run `vercel dev` locally — use your own API keys in env vars. To use different models or providers, edit `api/convert.js`.
+
 ## LLM mode
 
 When "Use LLM" is enabled, the client calls `POST /api/convert` with `{ prompt }`. The serverless function adds the API key and forwards to OpenRouter. Users never see or provide a key. If the request fails, the tool falls back to rule-based conversion.
