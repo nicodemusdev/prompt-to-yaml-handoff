@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Prompt to YAML</title>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --surface: #1a1a1f;
+      --border: #2a2a32;
+      --text: #e4e4e7;
+      --muted: #71717a;
+      --accent: #a78bfa;
+      --success: #22c55e;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      padding: 1.5rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    h1 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--accent); }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
+    textarea, select, input {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    button {
+      padding: 0.5rem 1rem;
+      background: var(--accent);
+      border: none;
+      border-radius: 4px;
+      color: var(--bg);
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:hover { opacity: 0.9; }
+    button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+    .section { margin-bottom: 1.5rem; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .row > * { flex: 1; min-width: 120px; }
+    .collapsible { margin-bottom: 1rem; }
+    .collapsible summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+    .collapsible[open] summary { margin-bottom: 0.5rem; }
+    .checkbox-row { display: flex; align-items: center; gap: 0.5rem; margin: 0.5rem 0; }
+    .checkbox-row input { width: auto; }
+    pre {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 1rem;
+      overflow-x: auto;
+      font-size: 0.8rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .output-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .footer { margin-top: 2rem; font-size: 0.75rem; color: var(--muted); }
+    .footer a { color: var(--accent); }
+    .toast { position: fixed; bottom: 1rem; right: 1rem; background: var(--success); color: var(--bg); padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <h1>Prompt → YAML Handoff</h1>
+  <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem;">Convert plain text into structured agent handoffs with YAML frontmatter.</p>
+
+  <div class="section">
+    <label for="prompt">Plain text prompt</label>
+    <textarea id="prompt" placeholder="e.g. I just put a new handoff about llm prompting in your handoffs, can you review so we can discuss it for social content ideas?"></textarea>
+  </div>
+
+  <div class="collapsible section">
+    <summary>Overrides</summary>
+    <div class="row">
+      <div>
+        <label for="agentFrom">From</label>
+        <select id="agentFrom"></select>
+      </div>
+      <div>
+        <label for="agentTo">To</label>
+        <select id="agentTo"></select>
+      </div>
+      <div>
+        <label for="priority">Priority</label>
+        <select id="priority">
+          <option value="low">low</option>
+          <option value="medium" selected>medium</option>
+          <option value="high">high</option>
+          <option value="critical">critical</option>
+        </select>
+      </div>
+      <div>
+        <label for="type">Type</label>
+        <select id="type">
+          <option value="handoff" selected>handoff</option>
+          <option value="review">review</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="checkbox-row">
+      <input type="checkbox" id="useLLM">
+      <label for="useLLM" style="margin:0">Use LLM (improved extraction, requires backend)</label>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="addRepetition">
+      <label for="addRepetition" style="margin:0">Add prompt repetition (duplicate body with "Let me repeat that:")</label>
+    </div>
+  </div>
+
+  <div class="section">
+    <button id="convert">Convert</button>
+    <span id="convertStatus" style="margin-left: 0.5rem; font-size: 0.8rem; color: var(--muted);"></span>
+  </div>
+
+  <div class="section" id="outputSection" style="display:none">
+    <label>Output</label>
+    <pre id="output"></pre>
+    <div class="output-actions">
+      <button id="copy" class="secondary">Copy</button>
+    </div>
+    <div class="collapsible" id="debugSection" style="display:none; margin-top: 1rem">
+      <summary>Raw LLM response</summary>
+      <pre id="rawLlm"></pre>
+    </div>
+  </div>
+
+  <div class="collapsible section">
+    <summary>Settings — customize agent roles</summary>
+    <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem;">Comma-separated list. First = default "from", rest populate dropdowns.</p>
+    <input type="text" id="customAgents" placeholder="user, marketer, builder, coordinator">
+    <button id="saveSettings" class="secondary" style="margin-top: 0.5rem">Save</button>
+  </div>
+
+  <div class="footer">
+    Output uses generic YAML frontmatter. Compatible with agent handoff systems.
+  </div>
+
+  <div class="toast" id="toast">Copied</div>
+
+  <script>
+    const DEFAULT_AGENTS = ['user', 'marketer', 'builder', 'coordinator'];
+    const STORAGE_KEY = 'prompt-to-yaml-agents';
+
+    function getAgents() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          const list = stored.split(',').map(s => s.trim()).filter(Boolean);
+          if (list.length) return list;
+        } catch (_) {}
+      }
+      return [...DEFAULT_AGENTS];
+    }
+
+    function saveAgents(agents) {
+      localStorage.setItem(STORAGE_KEY, agents.join(', '));
+      populateDropdowns();
+    }
+
+    function populateDropdowns() {
+      const agents = getAgents();
+      const from = document.getElementById('agentFrom');
+      const to = document.getElementById('agentTo');
+      from.innerHTML = agents.map(a => `<option value="${a}"${a === 'user' ? ' selected' : ''}>${a}</option>`).join('');
+      to.innerHTML = '<option value="">auto</option>' + agents.map(a => `<option value="${a}">${a}</option>`).join('');
+      document.getElementById('customAgents').value = agents.join(', ');
+    }
+
+    function inferAgentTo(text) {
+      const t = text.toLowerCase();
+      if (/\b(marketer|social|content|tweet|campaign|marketing)\b/.test(t)) return 'marketer';
+      if (/\b(builder|build|implement|code|develop)\b/.test(t)) return 'builder';
+      if (/\b(coordinator|coordinate|review|orchestrate)\b/.test(t)) return 'coordinator';
+      return 'marketer';
+    }
+
+    function inferDeliverable(text) {
+      const t = text.toLowerCase();
+      if (/\b(review|discuss)\b/.test(t)) return 'discussion-ready';
+      return 'handoff';
+    }
+
+    function extractContextHint(text) {
+      const m = text.match(/\b(handoff|file|document)\s+(?:about|on|regarding)\s+([^.?!]+)/i);
+      if (m) return m[2].trim();
+      const m2 = text.match(/in your handoffs[^,]*[,:]?\s*([^.?!]+)/i);
+      if (m2) return m2[1].trim();
+      return '';
+    }
+
+    function parseSections(prompt) {
+      const action = prompt.split(/[.!?]/)[0].trim() || prompt.trim();
+      let purpose = '';
+      let nextStep = '';
+      const soThat = prompt.match(/\b(?:so that|because|in order to)\s+([^.?!]+)/i);
+      if (soThat) purpose = soThat[1].trim();
+      const andThen = prompt.match(/\b(?:and then|first|next|then)\s+([^.?!]+)/i);
+      if (andThen) nextStep = andThen[1].trim();
+      return { action, purpose, nextStep };
+    }
+
+    function parseStructuredInput(prompt) {
+      const actionM = prompt.match(/\bAction:\s*([^\n]+)/i);
+      const purposeM = prompt.match(/\bPurpose:\s*([^\n]+)/i);
+      const nextM = prompt.match(/\bNext(?:\s+step)?:\s*([^\n]+)/i);
+      if (!actionM && !purposeM && !nextM) return null;
+      return {
+        action: actionM ? actionM[1].trim() : '',
+        purpose: purposeM ? purposeM[1].trim() : '',
+        nextStep: nextM ? nextM[1].trim() : '',
+      };
+    }
+
+    function getRuleExtracted(prompt) {
+      const structured = parseStructuredInput(prompt);
+      if (structured && (structured.action || structured.purpose || structured.nextStep)) {
+        const sections = parseSections(prompt);
+        const derived = deriveFromPrompt(prompt);
+        return {
+          action: structured.action || sections.action || prompt.split(/[.!?]/)[0].trim(),
+          purpose: structured.purpose || derived.purpose,
+          nextStep: structured.nextStep || derived.nextStep,
+          title: derived.title,
+        };
+      }
+      const derived = deriveFromPrompt(prompt);
+      const sections = parseSections(prompt);
+      const hasTemplate = /\b(plan|options|ways|ideas|review|discuss|money|monetize|earn)\b/i.test(prompt);
+      if (hasTemplate) {
+        return {
+          action: sections.action,
+          purpose: derived.purpose,
+          nextStep: derived.nextStep,
+          title: derived.title,
+        };
+      }
+      return {
+        action: sections.action,
+        purpose: sections.purpose || derived.purpose,
+        nextStep: sections.nextStep || derived.nextStep,
+        title: derived.title,
+      };
+    }
+
+    const GENERIC = { title: /^task$/i, purpose: /prepare for discussion|review and respond/i, nextStep: /^review and respond\.?$/i };
+    function isGeneric(field, value) {
+      if (!value || typeof value !== 'string') return true;
+      const re = GENERIC[field];
+      return re ? re.test(value.trim()) : false;
+    }
+    function deriveFromPrompt(prompt) {
+      const t = prompt.toLowerCase();
+      let purpose = 'User wants this done.';
+      let nextStep = 'Review and respond.';
+      const nMatch = prompt.match(/\b(\d+)\s+(?:options?|ways?|ideas?|alternatives?)\b/i);
+      const n = nMatch ? parseInt(nMatch[1], 10) : null;
+      const constraintMatch = prompt.match(/(?:can|to)\s+(?:start|do|try)\s+(.+?)(?:\.|,|$)/i);
+      const constraint = constraintMatch ? constraintMatch[1].trim().slice(0, 40) : '';
+      if (n && /\b(options?|ways?|ideas?)\b/.test(t)) {
+        purpose = constraint ? `User wants ${n} options they ${constraint}.` : `User wants ${n} actionable options.`;
+        nextStep = `Research and list ${n} options with concrete first steps for each.`;
+      } else if (/\b(plan|options|ways|ideas)\b/.test(t)) {
+        purpose = 'User wants actionable options or a plan.';
+        nextStep = /\boptions?\b|\bways?\b/.test(t) ? 'Research and list options with concrete first steps.' : 'Create a plan with actionable steps.';
+      } else if (/\b(review|discuss)\b/.test(t)) {
+        purpose = 'Prepare for discussion.';
+        nextStep = 'Read the material, extract key angles for discussion.';
+      } else if (/\b(money|monetize|earn)\b/.test(t)) {
+        purpose = 'User wants monetization options they can start soon.';
+        nextStep = n ? `Research and list ${n} options with concrete first steps for each.` : 'Research and list 3 options with concrete first steps for each.';
+      }
+      const first = prompt.split(/[.!?]/)[0].trim().slice(0, 60);
+      const title = first || 'Task';
+      return { title, purpose, nextStep };
+    }
+
+    function slugify(s) {
+      return s.replace(/\s+/g, '-').replace(/[^a-z0-9-]/gi, '').toLowerCase().slice(0, 50);
+    }
+
+    function setStatus(msg) {
+      document.getElementById('convertStatus').textContent = msg;
+    }
+
+    async function convert() {
+      const prompt = document.getElementById('prompt').value.trim();
+      if (!prompt) return;
+
+      const useLLM = document.getElementById('useLLM').checked;
+      const agents = getAgents();
+      const agentFrom = document.getElementById('agentFrom').value || agents[0];
+      const priority = document.getElementById('priority').value;
+      const type = document.getElementById('type').value;
+      const addRepetition = document.getElementById('addRepetition').checked;
+
+      const ruleExtracted = getRuleExtracted(prompt);
+      let agentTo, deliverable, contextFiles, contextHint, purpose, nextStep, rawLlmResponse = null;
+
+      if (useLLM) {
+        setStatus('Calling LLM...');
+        try {
+          const base = window.location.origin;
+          const res = await fetch(`${base}/api/convert`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt, ruleExtracted: { action: ruleExtracted.action, purpose: ruleExtracted.purpose, nextStep: ruleExtracted.nextStep } }),
+          });
+          const data = await res.json();
+          rawLlmResponse = JSON.stringify(data, null, 2);
+          if (!res.ok) throw new Error(data.error || data.details || 'LLM failed');
+          agentTo = (data.agent_to || inferAgentTo(prompt)).toLowerCase().replace(/\s+/g, '-');
+          deliverable = data.deliverable_type || inferDeliverable(prompt);
+          contextFiles = Array.isArray(data.context_files) ? data.context_files : [];
+          contextHint = (isGeneric('title', data.title) ? ruleExtracted.title : data.title) || data.task_summary || extractContextHint(prompt);
+          purpose = isGeneric('purpose', data.purpose) ? ruleExtracted.purpose : data.purpose;
+          nextStep = isGeneric('nextStep', data.next_step) ? ruleExtracted.nextStep : data.next_step;
+        } catch (e) {
+          setStatus('LLM failed, using rules');
+          agentTo = document.getElementById('agentTo').value || inferAgentTo(prompt);
+          deliverable = inferDeliverable(prompt);
+          contextHint = ruleExtracted.title || extractContextHint(prompt);
+          contextFiles = contextHint ? [`handoffs/to-${agentTo}/${slugify(contextHint)}.md`] : [];
+          purpose = ruleExtracted.purpose;
+          nextStep = ruleExtracted.nextStep;
+        }
+        setStatus('');
+      } else {
+        agentTo = document.getElementById('agentTo').value || inferAgentTo(prompt);
+        deliverable = inferDeliverable(prompt);
+        contextHint = ruleExtracted.title || extractContextHint(prompt);
+        contextFiles = contextHint ? [`handoffs/to-${agentTo}/${slugify(contextHint)}.md`] : [];
+        purpose = ruleExtracted.purpose;
+        nextStep = ruleExtracted.nextStep;
+      }
+
+      const taskSummary = contextHint || 'Task';
+      purpose = purpose || 'Prepare for discussion or next steps.';
+      nextStep = nextStep || 'Review and respond.';
+      let body = `# ${taskSummary}
+
+**Action:** ${prompt}
+**Purpose:** ${purpose}
+**Next step:** ${nextStep}`;
+
+      if (addRepetition) {
+        body += `
+
+---
+
+Let me repeat that:
+
+# ${taskSummary}
+
+**Action:** ${prompt}
+**Purpose:** ${purpose}
+**Next step:** ${nextStep}`;
+      }
+
+      const yaml = `---
+type: ${type}
+status: pending
+agent-from: ${agentFrom}
+agent-to: ${agentTo}
+priority: ${priority}
+deliverable: ${deliverable}
+context_files: ${JSON.stringify(contextFiles)}
+tags: []
+---
+
+${body}`;
+
+      document.getElementById('output').textContent = yaml;
+      document.getElementById('outputSection').style.display = 'block';
+      const debugEl = document.getElementById('debugSection');
+      const rawEl = document.getElementById('rawLlm');
+      if (rawLlmResponse) {
+        debugEl.style.display = 'block';
+        rawEl.textContent = rawLlmResponse;
+      } else {
+        debugEl.style.display = 'none';
+      }
+    }
+
+    function copyOutput() {
+      const text = document.getElementById('output').textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        const t = document.getElementById('toast');
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 1500);
+      });
+    }
+
+    document.getElementById('convert').addEventListener('click', convert);
+    document.getElementById('copy').addEventListener('click', copyOutput);
+    document.getElementById('saveSettings').addEventListener('click', () => {
+      const raw = document.getElementById('customAgents').value;
+      const agents = raw.split(',').map(s => s.trim()).filter(Boolean);
+      if (agents.length) saveAgents(agents);
+    });
+
+    populateDropdowns();
+  </script>
+</body>
+</html>
