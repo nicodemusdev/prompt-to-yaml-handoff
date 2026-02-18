@@ -101,6 +101,8 @@ export default async function handler(req, res) {
 
   const origin = req.headers.origin || 'https://localhost';
 
+  let openRouterErr = null;
+
   // Try OpenRouter first
   if (openRouterKey) {
     try {
@@ -113,9 +115,9 @@ export default async function handler(req, res) {
           return res.status(200).json(extracted);
         }
       }
-      // 429 or other failure — fall through to Groq
-    } catch (_) {
-      // Fall through to Groq
+      openRouterErr = `${response.status}: ${await response.text().catch(() => '')}`;
+    } catch (e) {
+      openRouterErr = e.message;
     }
   }
 
@@ -125,19 +127,33 @@ export default async function handler(req, res) {
       const { response } = await callGroq(content, groqKey);
       if (!response.ok) {
         const err = await response.text();
-        return res.status(502).json({ error: 'LLM request failed', details: err });
+        return res.status(502).json({
+          error: 'LLM request failed',
+          details: err,
+          openRouterErr: openRouterErr || undefined,
+        });
       }
       const data = await response.json();
       const text = data.choices?.[0]?.message?.content?.trim();
       if (!text) {
-        return res.status(502).json({ error: 'Empty LLM response' });
+        return res.status(502).json({
+          error: 'Empty LLM response',
+          openRouterErr: openRouterErr || undefined,
+        });
       }
       const extracted = parseContent(text);
       return res.status(200).json(extracted);
     } catch (e) {
-      return res.status(500).json({ error: 'Conversion failed', details: e.message });
+      return res.status(500).json({
+        error: 'Conversion failed',
+        details: e.message,
+        openRouterErr: openRouterErr || undefined,
+      });
     }
   }
 
-  return res.status(503).json({ error: 'LLM not configured' });
+  return res.status(503).json({
+    error: 'LLM not configured',
+    openRouterErr: openRouterErr || undefined,
+  });
 }
