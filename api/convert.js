@@ -9,10 +9,12 @@ const EXTRACTION_PROMPT = `You extract structured task data from messages. Retur
 Roles: builder = code/software. coordinator = research, plan, options, break down. marketer = content, campaigns, social.
 
 Example: "I want 3 ways to make money online I can start today"
-→ {"agent_to":"coordinator","title":"Online Money-Making Options","task_summary":"Research 3 monetization options","purpose":"User wants actionable options they can start immediately","next_step":"Research and list 3 options with concrete first steps for each","context_files":[],"deliverable_type":"handoff"}
+→ {"agent_to":"coordinator","title":"Online Money-Making Options","task_summary":"Research 3 monetization options","handoff_summary":"3 monetization options — user wants actionable choices. Next: research and list 3 options with first steps for each","purpose":"User wants actionable options they can start immediately","next_step":"Research and list 3 options with concrete first steps for each","context_files":[],"deliverable_type":"handoff"}
 
 Example: "Review this handoff for social content ideas"
-→ {"agent_to":"marketer","title":"Social Content Review","task_summary":"Review handoff for content angles","purpose":"Prepare for social content discussion","next_step":"Read the handoff, extract 3-5 content angles","context_files":["handoff"],"deliverable_type":"discussion-ready"}
+→ {"agent_to":"marketer","title":"Social Content Review","task_summary":"Review handoff for content angles","handoff_summary":"Social content review — prepare for discussion. Next: read handoff, extract 3-5 content angles","purpose":"Prepare for social content discussion","next_step":"Read the handoff, extract 3-5 content angles","context_files":["handoff"],"deliverable_type":"discussion-ready"}
+
+handoff_summary = one-line TL;DR of the entire handoff (task + purpose + next step).
 
 Now extract from this message. Return valid JSON only:
 `;
@@ -33,7 +35,7 @@ Pre-extracted:
 User said:
 ${prompt}
 
-Refine or confirm. Return valid JSON: {"agent_to":"...","title":"...","task_summary":"...","purpose":"...","next_step":"...","context_files":[],"deliverable_type":"handoff"|"discussion-ready"}`;
+Refine or confirm. Return valid JSON: {"agent_to":"...","title":"...","task_summary":"...","handoff_summary":"...","purpose":"...","next_step":"...","context_files":[],"deliverable_type":"handoff"|"discussion-ready"}. handoff_summary = one-line TL;DR of the entire handoff.`;
 }
 
 async function callOpenRouter(content, key, origin) {

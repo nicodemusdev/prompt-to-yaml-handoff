@@ -122,6 +122,10 @@
       <input type="checkbox" id="addRepetition">
       <label for="addRepetition" style="margin:0">Add prompt repetition (duplicate body with "Let me repeat that:")</label>
     </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="addSummary" checked>
+      <label for="addSummary" style="margin:0">Add handoff summary (one-line TL;DR at end)</label>
+    </div>
   </div>
 
   <div class="section">
@@ -309,9 +313,10 @@
       const priority = document.getElementById('priority').value;
       const type = document.getElementById('type').value;
       const addRepetition = document.getElementById('addRepetition').checked;
+      const addSummary = document.getElementById('addSummary').checked;
 
       const ruleExtracted = getRuleExtracted(prompt);
-      let agentTo, deliverable, contextFiles, contextHint, purpose, nextStep, rawLlmResponse = null;
+      let agentTo, deliverable, contextFiles, contextHint, purpose, nextStep, handoffSummary, rawLlmResponse = null;
 
       if (useLLM) {
         setStatus('Calling LLM...');
@@ -331,6 +336,7 @@
           contextHint = (isGeneric('title', data.title) ? ruleExtracted.title : data.title) || data.task_summary || extractContextHint(prompt);
           purpose = isGeneric('purpose', data.purpose) ? ruleExtracted.purpose : data.purpose;
           nextStep = isGeneric('nextStep', data.next_step) ? ruleExtracted.nextStep : data.next_step;
+          handoffSummary = data.handoff_summary || null;
         } catch (e) {
           setStatus('LLM failed, using rules');
           agentTo = document.getElementById('agentTo').value || inferAgentTo(prompt);
@@ -339,6 +345,7 @@
           contextFiles = contextHint ? [`handoffs/to-${agentTo}/${slugify(contextHint)}.md`] : [];
           purpose = ruleExtracted.purpose;
           nextStep = ruleExtracted.nextStep;
+          handoffSummary = null;
         }
         setStatus('');
       } else {
@@ -348,16 +355,24 @@
         contextFiles = contextHint ? [`handoffs/to-${agentTo}/${slugify(contextHint)}.md`] : [];
         purpose = ruleExtracted.purpose;
         nextStep = ruleExtracted.nextStep;
+        handoffSummary = null;
       }
 
       const taskSummary = contextHint || 'Task';
       purpose = purpose || 'Prepare for discussion or next steps.';
       nextStep = nextStep || 'Review and respond.';
+      const summaryLine = handoffSummary || `${taskSummary} — ${purpose} Next: ${nextStep}`.slice(0, 120);
       let body = `# ${taskSummary}
 
 **Action:** ${prompt}
 **Purpose:** ${purpose}
 **Next step:** ${nextStep}`;
+
+      if (addSummary) {
+        body += `
+
+**Summary:** ${summaryLine}`;
+      }
 
       if (addRepetition) {
         body += `
@@ -371,6 +386,11 @@ Let me repeat that:
 **Action:** ${prompt}
 **Purpose:** ${purpose}
 **Next step:** ${nextStep}`;
+        if (addSummary) {
+          body += `
+
+**Summary:** ${summaryLine}`;
+        }
       }
 
       const yaml = `---
