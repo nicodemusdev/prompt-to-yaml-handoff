@@ -6,50 +6,70 @@
   <title>Prompt to YAML</title>
   <style>
     :root {
-      --bg: #0f0f12;
-      --surface: #1a1a1f;
+      --bg: #0a0a0e;
+      --surface: #16161b;
       --border: #2a2a32;
-      --text: #e4e4e7;
-      --muted: #71717a;
+      --text: #f5f5f7;
+      --muted: #8a8a92;
+      --cyan: #00d9ff;
+      --magenta: #ff00ff;
+      --yellow: #ffff00;
       --accent: #a78bfa;
       --success: #22c55e;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      padding: 1.5rem;
-      max-width: 720px;
+      max-width: 800px;
       margin: 0 auto;
     }
-    h1 { font-size: 1.25rem; margin-bottom: 1rem; color: var(--accent); }
+    h1, h2 {
+      font-family: ui-monospace, SFMono-Regular, monospace;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--cyan);
+    }
+    h1 { font-size: 2rem; text-shadow: 0 0 10px rgba(0, 217, 255, 0.5); }
+    h2 { font-size: 1.25rem; color: var(--magenta); }
     label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.25rem; }
     textarea, select, input {
       width: 100%;
       padding: 0.5rem 0.75rem;
       background: var(--surface);
-      border: 1px solid var(--border);
+      border: 2px solid var(--cyan);
       border-radius: 4px;
       color: var(--text);
       font-family: inherit;
       font-size: 0.9rem;
     }
+    textarea:focus, input:focus, select:focus {
+      border-color: var(--magenta);
+      box-shadow: 0 0 10px rgba(255, 0, 255, 0.3);
+      outline: none;
+    }
     textarea { min-height: 100px; resize: vertical; }
     button {
       padding: 0.5rem 1rem;
-      background: var(--accent);
-      border: none;
+      background: linear-gradient(135deg, var(--magenta), var(--cyan));
+      border: 2px solid var(--magenta);
       border-radius: 4px;
       color: var(--bg);
-      font-weight: 600;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       cursor: pointer;
       font-family: inherit;
+      transition: all 0.2s;
     }
-    button:hover { opacity: 0.9; }
-    button.secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
-    .section { margin-bottom: 1.5rem; }
+    button:hover {
+      box-shadow: 0 0 20px rgba(255, 0, 255, 0.6);
+      transform: scale(1.02);
+    }
+    button.secondary { background: var(--surface); color: var(--text); border: 2px solid var(--border); }
+    .section { margin-bottom: 1.5rem; padding: 0 1.5rem; }
     .row { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
     .row > * { flex: 1; min-width: 120px; }
     .collapsible { margin-bottom: 1rem; }
@@ -64,26 +84,115 @@
       padding: 1rem;
       overflow-x: auto;
       font-size: 0.8rem;
+      font-family: ui-monospace, monospace;
       white-space: pre-wrap;
       word-break: break-word;
     }
+    .yaml-key { color: var(--cyan); font-weight: 600; }
+    .yaml-value { color: var(--text); }
+    .yaml-string { color: var(--magenta); }
+    .yaml-status-pending { color: var(--yellow); }
+    .yaml-status-complete { color: var(--success); }
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-right: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .badge-priority-critical { background: var(--magenta); color: var(--bg); }
+    .badge-priority-high { background: var(--yellow); color: var(--bg); }
+    .badge-priority-medium { background: var(--cyan); color: var(--bg); }
+    .badge-priority-low { background: var(--surface); border: 1px solid var(--border); }
+    .badge-agent { background: var(--surface); border: 1px solid var(--border); }
+    .badge-tag { background: var(--surface); border: 1px solid var(--accent); }
+    .quick-snippets { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    .snippet-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      padding: 0.75rem;
+    }
+    .snippet-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .snippet-text { font-size: 0.85rem; margin: 0.5rem 0; word-break: break-word; }
+    .snippet-card button { padding: 0.25rem 0.5rem; font-size: 0.75rem; margin-top: 0.25rem; }
+    .output-footer { font-size: 0.75rem; color: var(--muted); margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
     .output-actions { display: flex; gap: 0.5rem; margin-top: 0.5rem; }
     .footer { margin-top: 2rem; font-size: 0.75rem; color: var(--muted); }
     .footer a { color: var(--accent); }
     .toast { position: fixed; bottom: 1rem; right: 1rem; background: var(--success); color: var(--bg); padding: 0.5rem 1rem; border-radius: 4px; font-size: 0.85rem; opacity: 0; transition: opacity 0.2s; }
     .toast.show { opacity: 1; }
+    .hero {
+      text-align: center;
+      padding: 3rem 1.5rem;
+      background: linear-gradient(135deg, rgba(0, 217, 255, 0.05), rgba(255, 0, 255, 0.05));
+      border-bottom: 2px solid var(--cyan);
+      margin-bottom: 2rem;
+    }
+    .hero h1 { font-size: 3rem; margin-bottom: 0.5rem; }
+    .hero-tagline { font-size: 1.25rem; color: var(--muted); margin-bottom: 2rem; }
+    .hero-insight {
+      background: var(--surface);
+      border-left: 4px solid var(--magenta);
+      padding: 1.5rem;
+      margin: 2rem auto;
+      max-width: 600px;
+      border-radius: 4px;
+      text-align: left;
+    }
+    .insight-quote { font-style: italic; color: var(--text); font-size: 1.1rem; margin-bottom: 0.75rem; }
+    .insight-source { font-size: 0.9rem; color: var(--muted); }
+    .insight-source a { color: var(--cyan); text-decoration: underline; }
+    .cta-button { padding: 1rem 2rem; font-size: 1rem; }
+    .resources { padding: 2rem 1.5rem; border-top: 2px solid var(--magenta); }
+    .resources h2 { margin-bottom: 1.5rem; }
+    .resource-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+    .resource-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      padding: 1rem;
+      border-radius: 4px;
+      text-decoration: none;
+      color: var(--text);
+      transition: all 0.2s;
+    }
+    .resource-card:hover { border-color: var(--cyan); box-shadow: 0 0 15px rgba(0, 217, 255, 0.3); }
+    .resource-card strong { display: block; margin-bottom: 0.25rem; }
+    .section-header { cursor: pointer; list-style: none; font-weight: 600; }
+    .section-header::-webkit-details-marker { display: none; }
+    .output-section details { margin-bottom: 0.5rem; }
+    .output-section details summary { padding: 0.5rem 0; }
+    .app-footer {
+      background: var(--surface);
+      border-top: 2px solid var(--yellow);
+      padding: 1.5rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .app-footer a { color: var(--cyan); }
   </style>
 </head>
 <body>
-  <h1>Prompt → YAML Handoff</h1>
-  <p style="color: var(--muted); font-size: 0.9rem; margin-bottom: 1rem;">Convert plain text into structured agent handoffs with YAML frontmatter.</p>
+  <section class="hero">
+    <h1>Prompt → YAML</h1>
+    <p class="hero-tagline">Convert plain text prompts into structured handoffs with a single click.</p>
+    <div class="hero-insight">
+      <p class="insight-quote">"Sending a prompt twice improves LLM accuracy across 7 benchmarks on 7 different models — with no increase in output length or response time."</p>
+      <p class="insight-source">Based on <a href="https://arxiv.org/abs/2512.14982" target="_blank" rel="noopener">Google research on prompt repetition</a></p>
+    </div>
+    <button class="cta-button" id="scrollToTool">Start Converting</button>
+  </section>
 
+  <section class="tool-section">
   <div class="section">
     <label for="prompt">Plain text prompt</label>
     <textarea id="prompt" placeholder="e.g. I just put a new handoff about llm prompting in your handoffs, can you review so we can discuss it for social content ideas?"></textarea>
   </div>
 
-  <div class="collapsible section">
+  <details class="collapsible section">
     <summary>Overrides</summary>
     <div class="row">
       <div>
@@ -106,12 +215,19 @@
       <div>
         <label for="type">Type</label>
         <select id="type">
-          <option value="handoff" selected>handoff</option>
-          <option value="review">review</option>
+          <option value="research">research</option>
+          <option value="plan">plan</option>
+          <option value="write">write</option>
+          <option value="review" selected>review</option>
+          <option value="analysis">analysis</option>
+          <option value="feature-request">feature-request</option>
+          <option value="bug-report">bug-report</option>
+          <option value="discussion">discussion</option>
+          <option value="decision">decision</option>
         </select>
       </div>
     </div>
-  </div>
+  </details>
 
   <div class="section">
     <div class="checkbox-row">
@@ -135,26 +251,62 @@
 
   <div class="section" id="outputSection" style="display:none">
     <label>Output</label>
-    <pre id="output"></pre>
-    <div class="output-actions">
-      <button id="copy" class="secondary">Copy</button>
+    <div id="outputBadges" class="badge-row" style="margin-bottom: 1rem;"></div>
+    <div id="outputSnippets" class="quick-snippets"></div>
+    <div class="output-section">
+      <details>
+        <summary class="section-header">Frontmatter</summary>
+        <pre id="outputFrontmatter" class="yaml-block"></pre>
+      </details>
+      <details>
+        <summary class="section-header">Action</summary>
+        <pre id="outputAction" class="action-block"></pre>
+      </details>
+      <details open>
+        <summary class="section-header">Full Output</summary>
+        <pre id="outputFull" class="full-yaml"></pre>
+      </details>
     </div>
-    <div class="collapsible" id="debugSection" style="display:none; margin-top: 1rem">
+    <div class="output-actions">
+      <button id="copy" class="secondary">Copy Full</button>
+    </div>
+    <div id="outputFooter" class="output-footer"></div>
+    <details class="collapsible" id="debugSection" style="display:none; margin-top: 1rem">
       <summary>Raw LLM response</summary>
       <pre id="rawLlm"></pre>
-    </div>
+    </details>
   </div>
 
-  <div class="collapsible section">
+  <details class="collapsible section">
     <summary>Settings — customize agent roles</summary>
     <p style="font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem;">Comma-separated list. First = default "from", rest populate dropdowns.</p>
     <input type="text" id="customAgents" placeholder="user, marketer, builder, coordinator">
     <button id="saveSettings" class="secondary" style="margin-top: 0.5rem">Save</button>
-  </div>
+  </details>
+  </section>
 
-  <div class="footer">
-    Output uses generic YAML frontmatter. Compatible with agent handoff systems.
-  </div>
+  <section class="resources">
+    <h2>Resources</h2>
+    <div class="resource-grid">
+      <a href="https://github.com/nicodemusdev/prompt-to-yaml-handoff" class="resource-card" target="_blank" rel="noopener">
+        <strong>GitHub</strong>
+        <p>Source code, docs, issues</p>
+      </a>
+      <a href="https://x.com/nicodemusdev" class="resource-card" target="_blank" rel="noopener">
+        <strong>Twitter</strong>
+        <p>Updates and examples</p>
+      </a>
+      <a href="https://arxiv.org/abs/2512.14982" class="resource-card" target="_blank" rel="noopener">
+        <strong>Paper</strong>
+        <p>Google study on prompt repetition</p>
+      </a>
+    </div>
+  </section>
+
+  <footer class="app-footer">
+    <p>Like this tool? Support development: <a href="https://github.com/sponsors/nicodemusdev">GitHub Sponsors</a></p>
+    <p style="margin-top: 0.5rem;">Attribution: Leviathan et al., <em>Prompt Repetition Improves Non-Reasoning LLMs</em>, arXiv:2512.14982</p>
+  </footer>
 
   <div class="toast" id="toast">Copied</div>
 
@@ -199,6 +351,56 @@
       const t = text.toLowerCase();
       if (/\b(review|discuss)\b/.test(t)) return 'discussion-ready';
       return 'handoff';
+    }
+
+    function inferTaskType(text) {
+      const t = text.toLowerCase();
+      if (/\b(research|investigate|analyze|explore|gather|study|compare|benchmark)\b/.test(t)) return 'research';
+      if (/\b(plan|roadmap|strategy|organize|structure|schedule|timeline)\b/.test(t)) return 'plan';
+      if (/\b(write|document|draft|create|compose|article|blog|content|copy)\b/.test(t)) return 'write';
+      if (/\b(review|feedback|critique|evaluate|audit|check)\b/.test(t)) return 'review';
+      if (/\b(breakdown|comparison|pros|cons|assess)\b/.test(t)) return 'analysis';
+      if (/\b(feature|add|new|capability|implement|build)\b/.test(t)) return 'feature-request';
+      if (/\b(bug|error|issue|broken|fix|crash|fail)\b/.test(t)) return 'bug-report';
+      if (/\b(discuss|debate|explore|options|brainstorm|think|consider)\b/.test(t)) return 'discussion';
+      if (/\b(decide|choose|commit|pick|select|go with|decision)\b/.test(t)) return 'decision';
+      return 'discussion';
+    }
+
+    function formatYamlHtml(yaml) {
+      const lines = yaml.split('\n');
+      let html = '';
+      for (const line of lines) {
+        if (line.startsWith('---') || line.trim() === '') {
+          html += escapeHtml(line) + '\n';
+          continue;
+        }
+        const m = line.match(/^(\w+(?:-\w+)*):\s*(.*)$/);
+        if (m) {
+          const key = escapeHtml(m[1]);
+          let val = escapeHtml(m[2]);
+          if (m[1] === 'status') {
+            val = val.includes('pending') ? '<span class="yaml-status-pending">' + val + '</span>' : '<span class="yaml-status-complete">' + val + '</span>';
+          } else if (/^["'].*["']$/.test(m[2]) || m[2].includes(',')) {
+            val = '<span class="yaml-string">' + val + '</span>';
+          }
+          html += '<span class="yaml-key">' + key + ':</span> ' + val + '\n';
+        } else {
+          html += escapeHtml(line) + '\n';
+        }
+      }
+      return html;
+    }
+    function escapeHtml(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function showToast() {
+      const t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 1500);
     }
 
     function extractContextHint(text) {
@@ -307,6 +509,9 @@
       const prompt = document.getElementById('prompt').value.trim();
       if (!prompt) return;
 
+      const inferredType = inferTaskType(prompt);
+      document.getElementById('type').value = inferredType;
+
       const useLLM = document.getElementById('useLLM').checked;
       const agents = getAgents();
       const agentFrom = document.getElementById('agentFrom').value || agents[0];
@@ -406,8 +611,28 @@ tags: []
 
 ${body}`;
 
-      document.getElementById('output').textContent = yaml;
+      const usedLLM = !!rawLlmResponse;
+      const fmMatch = yaml.match(/---\n([\s\S]*?)\n---/);
+      const frontmatter = fmMatch ? fmMatch[1] + '\n' : '';
+      const actionBlock = `**Action:** ${prompt}\n**Purpose:** ${purpose}\n**Next step:** ${nextStep}`;
+
+      document.getElementById('outputSection').dataset.fullYaml = yaml;
+      document.getElementById('outputBadges').innerHTML = [
+        `<span class="badge badge-priority-${priority}">${priority}</span>`,
+        `<span class="badge badge-agent">→ ${agentTo}</span>`,
+        `<span class="badge badge-tag">${type}</span>`,
+      ].join('');
+      document.getElementById('outputSnippets').innerHTML = [
+        { label: 'Action', text: prompt },
+        { label: 'Purpose', text: purpose },
+        { label: 'Next Step', text: nextStep },
+      ].map((s) => `<div class="snippet-card"><span class="snippet-label">${s.label}</span><p class="snippet-text">${escapeHtml(s.text)}</p><button class="copy-snippet secondary">Copy</button></div>`).join('');
+      document.getElementById('outputFrontmatter').innerHTML = formatYamlHtml(frontmatter);
+      document.getElementById('outputAction').textContent = actionBlock;
+      document.getElementById('outputFull').innerHTML = formatYamlHtml(yaml);
+      document.getElementById('outputFooter').textContent = `Generated by: ${usedLLM ? 'LLM (OpenRouter)' : 'Rules'} | ${new Date().toISOString().replace('T', ' ').slice(0, 19)} UTC`;
       document.getElementById('outputSection').style.display = 'block';
+
       const debugEl = document.getElementById('debugSection');
       const rawEl = document.getElementById('rawLlm');
       if (rawLlmResponse) {
@@ -419,16 +644,21 @@ ${body}`;
     }
 
     function copyOutput() {
-      const text = document.getElementById('output').textContent;
-      navigator.clipboard.writeText(text).then(() => {
-        const t = document.getElementById('toast');
-        t.classList.add('show');
-        setTimeout(() => t.classList.remove('show'), 1500);
-      });
+      const yaml = document.getElementById('outputSection').dataset.fullYaml || '';
+      navigator.clipboard.writeText(yaml).then(showToast);
     }
 
     document.getElementById('convert').addEventListener('click', convert);
     document.getElementById('copy').addEventListener('click', copyOutput);
+    document.getElementById('outputSection').addEventListener('click', (e) => {
+      if (e.target.classList.contains('copy-snippet')) {
+        const text = e.target.closest('.snippet-card')?.querySelector('.snippet-text')?.textContent || '';
+        navigator.clipboard.writeText(text).then(showToast);
+      }
+    });
+    document.getElementById('scrollToTool').addEventListener('click', () => {
+      document.querySelector('.tool-section')?.scrollIntoView({ behavior: 'smooth' });
+    });
     document.getElementById('saveSettings').addEventListener('click', () => {
       const raw = document.getElementById('customAgents').value;
       const agents = raw.split(',').map(s => s.trim()).filter(Boolean);
