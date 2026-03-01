@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thesis: Structured Handoffs — Prompt to YAML</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafafa;
+      --surface: #ffffff;
+      --border: #e8eaed;
+      --text: #202124;
+      --muted: #5f6368;
+      --primary: #1a73e8;
+      --primary-hover: #1557b0;
+      --accent: #34a853;
+      --card-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Roboto, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .top-nav .logo { font-weight: 500; font-size: 1.125rem; color: var(--text); text-decoration: none; }
+    .top-nav .links { display: flex; gap: 24px; font-size: 0.875rem; }
+    .top-nav .links a { color: var(--primary); text-decoration: none; }
+    .top-nav .links a:hover { text-decoration: underline; }
+    .top-nav .links a.active { font-weight: 500; color: var(--text); }
+    .main { max-width: 680px; margin: 0 auto; padding: 40px 24px 64px; }
+    .thesis-article {
+      background: var(--surface);
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      padding: 48px 40px;
+      border: 1px solid var(--border);
+    }
+    .thesis-article h1 {
+      font-size: 1.75rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+      line-height: 1.3;
+    }
+    .thesis-meta {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+    .thesis-article h2 {
+      font-size: 1.25rem;
+      font-weight: 500;
+      color: var(--text);
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .thesis-article h2:first-of-type { margin-top: 0; }
+    .thesis-article p {
+      margin-bottom: 1rem;
+      font-size: 0.95rem;
+    }
+    .thesis-article p:last-child { margin-bottom: 0; }
+    .thesis-article strong { font-weight: 500; }
+    .thesis-article a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .thesis-article a:hover { text-decoration: underline; }
+    .thesis-article hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+    .thesis-article table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin: 1rem 0;
+    }
+    .thesis-article th,
+    .thesis-article td {
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .thesis-article th {
+      background: #f8f9fa;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .thesis-article td { background: var(--surface); }
+    .thesis-article ul {
+      margin: 1rem 0 1rem 1.25rem;
+      padding: 0;
+    }
+    .thesis-article li { margin-bottom: 0.5rem; }
+    .thesis-article code {
+      font-family: ui-monospace, monospace;
+      font-size: 0.85em;
+      background: #f1f3f4;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      color: var(--text);
+    }
+    .thesis-footer {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .thesis-footer a { color: var(--primary); }
+  </style>
+</head>
+<body>
+  <nav class="top-nav">
+    <a href="index.html" class="logo">Prompt → YAML</a>
+    <div class="links">
+      <a href="index.html">Tool</a>
+      <a href="thesis.html" class="active">Thesis</a>
+      <a href="https://github.com/nicodemusdev/prompt-to-yaml-handoff" target="_blank" rel="noopener">GitHub</a>
+      <a href="https://arxiv.org/abs/2512.14982" target="_blank" rel="noopener">Paper</a>
+    </div>
+  </nav>
+
+  <main class="main">
+    <article class="thesis-article">
+      <h1>Thesis: Structured Handoffs as Reinforcement for Multi-Agent Coordination</h1>
+      <p class="thesis-meta"><strong>Status:</strong> Living document · <strong>Date:</strong> 2026-02-18 · <strong>Synthesizes:</strong> Prompt repetition research, handoff design, knowledge-vault lineage</p>
+
+      <h2>1. The Problem</h2>
+      <p>Multi-agent systems fail when coordination is ambiguous. Agents receive natural language, infer intent, and act—but inference drifts. Without structure, the same prompt yields different interpretations across agents. Handoffs become noise.</p>
+
+      <hr>
+
+      <h2>2. What is a Handoff?</h2>
+      <p>A <strong>handoff</strong> is a structured transfer of intent and context from one party to another. We use the term for any explicit task-passing artifact, regardless of sender or recipient.</p>
+      <table>
+        <thead>
+          <tr><th>Type</th><th>Sender</th><th>Recipient</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Human → Agent</strong></td><td>Person</td><td>LLM/agent</td><td>User pastes a prompt; agent executes.</td></tr>
+          <tr><td><strong>Agent → Agent</strong></td><td>One agent</td><td>Another agent</td><td>Coordinator researches options, hands off to builder.</td></tr>
+          <tr><td><strong>Human → Human</strong></td><td>Person</td><td>Person</td><td>Async task handoff with context (e.g. handoffs/to-cedric/).</td></tr>
+          <tr><td><strong>Agent → Human</strong></td><td>Agent</td><td>Person</td><td>Agent produces a deliverable for human review or decision.</td></tr>
+        </tbody>
+      </table>
+      <p>In all cases, the handoff is a <strong>contract</strong>: it carries the raw intent (Statement), structured metadata (Purpose, Next step), and—for LLM recipients—verbatim repetition for better comprehension. The format is the same; routing metadata (agent-to, context_files) adapts to the workflow.</p>
+
+      <hr>
+
+      <h2>3. The Insight: Repetition Reinforces</h2>
+      <p><strong>Source:</strong> <a href="https://arxiv.org/pdf/2512.14982" target="_blank" rel="noopener">arXiv:2512.14982</a> — <em>Prompt Repetition Improves Non-Reasoning LLMs</em> (Leviathan, Kalman, Matias, Google Research, Dec 2025)</p>
+      <p>When not using reasoning, <strong>repeating the input prompt improves LLM performance</strong> without increasing output length or latency. The model attends better when the query appears twice. Variants like <code>&lt;QUERY&gt;Let me repeat that:&lt;QUERY&gt;</code> perform similarly.</p>
+      <p><strong>Implication:</strong> Reinforcement must be <strong>verbatim repetition</strong>—the same tokens twice. Paraphrase does not deliver the same benefit. The format <code>&lt;QUERY&gt;Let me repeat that:&lt;QUERY&gt;</code> applies to handoffs: repeat the raw statement, not a distilled summary.</p>
+
+      <hr>
+
+      <h2>4. The Handoff Format: Statement → Action → Statement (Verbatim)</h2>
+      <p>A handoff that embodies reinforcement has three parts:</p>
+      <table>
+        <thead>
+          <tr><th>Part</th><th>Role</th><th>Example</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Statement</strong></td><td>Full user intent (the raw prompt)</td><td>"Hey, I've been thinking about adding a simple referral program..."</td></tr>
+          <tr><td><strong>Action</strong></td><td>Structured extraction (purpose, next step)</td><td>Purpose: User wants 3 options. Next: Research and list 3 approaches.</td></tr>
+          <tr><td><strong>Statement (repeat)</strong></td><td>Verbatim repetition of the raw prompt</td><td>Same text as Statement—no paraphrase</td></tr>
+        </tbody>
+      </table>
+      <p>The <strong>repetition</strong> is the reinforcement block. Per Leviathan et al., the model attends better when the query appears twice. Use the paper's separator: <code>Let me repeat that:</code> then the Statement again, verbatim.</p>
+      <p><strong>Optional:</strong> A <code>tl;dr</code> one-liner in frontmatter can help routing/navigation. It is not the reinforcement block—it does not replace verbatim repetition.</p>
+
+      <hr>
+
+      <h2>5. Upstream: Arscontexta and the Primitive Set</h2>
+      <p><strong>Arscontexta</strong> introduced 15 universal primitives and a three-space architecture (self/notes/ops) for knowledge vaults. Conversation-driven derivation, markdown + YAML + wiki-links, MOC navigation, session rhythm.</p>
+      <p>Downstream systems have specialized these primitives for different contexts: operator workflows, task management, pluggable backends. A <strong>coordination layer</strong> adds explicit handoff routing—structured files with metadata, completion signals, agent-to-agent contracts. The format (YAML frontmatter + body) is the contract.</p>
+      <p>We reference Arscontexta as the foundational lineage. The coordination layer extends it without replacing it.</p>
+
+      <hr>
+
+      <h2>6. Natural Language → Structured Handoff</h2>
+      <p>A tool that converts plain text into this format operationalizes the thesis:</p>
+      <ol>
+        <li><strong>Rules first</strong> — Parse structure (Action/Purpose/Next), template detection, sentence extraction</li>
+        <li><strong>LLM refines</strong> — Hybrid: rules produce context; LLM confirms or improves</li>
+        <li><strong>Output</strong> — YAML frontmatter + Statement + Purpose + Next step + <strong>"Let me repeat that:"</strong> + Statement (verbatim)</li>
+      </ol>
+      <p>The reinforcement block is verbatim Statement repetition—the same tokens twice. No paraphrase. Optional <code>tl;dr</code> in frontmatter for routing only.</p>
+
+      <hr>
+
+      <h2>7. Thesis Statement</h2>
+      <p><strong>Structured handoffs with reinforcement (statement → action → statement verbatim) improve multi-agent coordination by:</strong></p>
+      <ol>
+        <li><strong>Eliminating ambiguity</strong> — Metadata routes; purpose and next step are explicit</li>
+        <li><strong>Reinforcing intent</strong> — Verbatim Statement repetition; agents attend better (Leviathan et al. prompt repetition principle)</li>
+        <li><strong>Enabling audit</strong> — Explicit handoff ceremony; no implicit state</li>
+        <li><strong>Extending lineage</strong> — Coordination primitives build on the primitive set; the format is the contract</li>
+      </ol>
+
+      <hr>
+
+      <h2>8. References</h2>
+      <ul>
+        <li>Leviathan et al., <em>Prompt Repetition Improves Non-Reasoning LLMs</em>, arXiv:2512.14982 (Dec 2025)</li>
+        <li>Arscontexta — 15 universal primitives, three-space architecture</li>
+      </ul>
+
+      <footer class="thesis-footer">
+        Leviathan et al., <em>Prompt Repetition Improves Non-Reasoning LLMs</em>, <a href="https://arxiv.org/abs/2512.14982" target="_blank" rel="noopener">arXiv:2512.14982</a>
+      </footer>
+    </article>
+  </main>
+</body>
+</html>
