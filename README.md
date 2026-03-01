@@ -38,6 +38,15 @@ python3 -m http.server 8080
 # then http://localhost:8080/
 ```
 
+### With LLM (Express — always-on local)
+
+```bash
+# Copy .env.example to .env, add OPENROUTER_API_KEY and GROQ_API_KEY
+npm start   # Listens on http://localhost:3001
+```
+
+For always-on: `systemctl --user enable --now prompt-to-yaml-api`
+
 ### With LLM (Vercel)
 
 1. Deploy to Vercel.

@@ -14,7 +14,7 @@ Example: "I want 3 ways to make money online I can start today"
 Example: "Review this handoff for social content ideas"
 → {"agent_to":"marketer","title":"Social Content Review","task_summary":"Review handoff for content angles","handoff_summary":"Social content review — prepare for discussion. Next: read handoff, extract 3-5 content angles","purpose":"Prepare for social content discussion","next_step":"Read the handoff, extract 3-5 content angles","context_files":["handoff"],"deliverable_type":"discussion-ready"}
 
-handoff_summary = one-line TL;DR of the entire handoff (task + purpose + next step).
+handoff_summary = one-line tl;dr for routing/navigation only (optional frontmatter). Not used for reinforcement—reinforcement is verbatim Statement repetition.
 
 Now extract from this message. Return valid JSON only:
 `;
@@ -24,6 +24,7 @@ function buildRefinementPrompt(prompt, ruleExtracted) {
   const p = ruleExtracted?.purpose ?? '';
   const n = ruleExtracted?.next_step ?? ruleExtracted?.nextStep ?? '';
   return `We pre-extracted from the user's message. Refine or confirm. Return JSON only.
+Do not simply extend generic phrases—replace them with task-specific extraction.
 
 Roles: builder = code/software. coordinator = research, plan, options. marketer = content, campaigns, social.
 
@@ -35,7 +36,7 @@ Pre-extracted:
 User said:
 ${prompt}
 
-Refine or confirm. Return valid JSON: {"agent_to":"...","title":"...","task_summary":"...","handoff_summary":"...","purpose":"...","next_step":"...","context_files":[],"deliverable_type":"handoff"|"discussion-ready"}. handoff_summary = one-line TL;DR of the entire handoff.`;
+Refine or confirm. Return valid JSON: {"agent_to":"...","title":"...","task_summary":"...","handoff_summary":"...","purpose":"...","next_step":"...","context_files":[],"deliverable_type":"handoff"|"discussion-ready"}. handoff_summary = one-line tl;dr for routing only. next_step = concrete action for recipient, not "Review and respond."`;
 }
 
 async function callOpenRouter(content, key, origin) {
